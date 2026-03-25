@@ -123,11 +123,12 @@ const Dashboard = () => {
       </MapContainer>
 
       {/* Connection Toast */}
-      <div className="absolute bottom-6 right-6 z-[1000]">
-         <div className={`px-4 py-2 rounded-full text-xs font-mono border transition-all ${socket.connected ? 'bg-emerald-900/40 border-emerald-500 text-emerald-300' : 'bg-red-900/40 border-red-500 text-red-300 animate-pulse'}`}>
-            {socket.connected ? 'SERVER CONNECTED' : 'SERVER DISCONNECTED'}
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[1000] w-max">
+         <div className={`px-6 py-2 rounded-full text-[10px] font-mono border backdrop-blur-md transition-all shadow-lg ${socket.connected ? 'bg-emerald-900/60 border-emerald-500 text-emerald-300' : 'bg-red-900/60 border-red-500 text-red-300 animate-pulse'}`}>
+            {socket.connected ? '● SERVER CONNECTED' : '○ SERVER DISCONNECTED'}
          </div>
       </div>
+
     </div>
   );
 };
