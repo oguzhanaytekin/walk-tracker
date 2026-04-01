@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io(window.location.origin, {
-  transports: ['websocket'],
-  upgrade: false
-});
+const socket = io();
+
 
 
 const Tracker = () => {
