@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { io } from 'socket.io-client';
 
-const socket = io();
-
+const SOCKET_URL = import.meta.env.MODE === 'development' ? 'http://localhost:3001' : '/';
+const socket = io(SOCKET_URL, {
+  path: '/socket.io',
+  transports: ['polling', 'websocket']
+});
 
 
 const Tracker = () => {

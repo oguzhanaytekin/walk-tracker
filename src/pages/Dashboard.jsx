@@ -12,8 +12,11 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const socket = io();
-
+const SOCKET_URL = import.meta.env.MODE === 'development' ? 'http://localhost:3001' : '/';
+const socket = io(SOCKET_URL, {
+  path: '/socket.io',
+  transports: ['polling', 'websocket']
+});
 
 
 // Component to handle auto-centering the map
