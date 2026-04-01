@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Polyline, useMap, GeoJSON } from 'react-leaflet';
 import { io } from 'socket.io-client';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,7 +18,6 @@ const socket = io(SOCKET_URL, {
   transports: ['polling', 'websocket']
 });
 
-
 // Component to handle auto-centering the map
 const RecenterMap = ({ position }) => {
   const map = useMap();
@@ -34,31 +33,55 @@ const Dashboard = () => {
   const [path, setPath] = useState([]);
   const [currentPos, setCurrentPos] = useState(null);
   const [stats, setStats] = useState({ distance: 0, duration: 0 });
+  const [neighborhoods, setNeighborhoods] = useState([]);
+  const [isConnected, setIsConnected] = useState(socket.connected);
 
   useEffect(() => {
-    socket.on('initialData', (data) => {
+    const nUrl = import.meta.env.MODE === 'development' ? 'http://localhost:3001/api/neighborhoods' : '/api/neighborhoods';
+    fetch(nUrl).then(res => res.json())
+      .then(data => setNeighborhoods(data))
+      .catch(console.error);
+
+    const onConnect = () => setIsConnected(true);
+    const onDisconnect = () => setIsConnected(false);
+    
+    const onInitialData = (data) => {
       if (data && data.length > 0) {
         const coords = data.map(p => [p.lat, p.lng]);
         setPath(coords);
         setCurrentPos(coords[coords.length - 1]);
       }
-    });
+    };
 
-    socket.on('locationUpdate', (data) => {
+    const onLocationUpdate = (data) => {
       const newCoord = [data.lat, data.lng];
       setPath(prev => [...prev, newCoord]);
       setCurrentPos(newCoord);
-    });
+    };
 
-    socket.on('walkCleared', () => {
+    const onWalkCleared = () => {
       setPath([]);
       setCurrentPos(null);
-    });
+    };
+
+    const onNeighborhoodUpdate = (data) => {
+      setNeighborhoods(prev => prev.map(n => n.id === data.id ? { ...n, owner_team: data.owner_team, score_red: data.scores.RED, score_blue: data.scores.BLUE, score_green: data.scores.GREEN } : n));
+    };
+
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    socket.on('initialData', onInitialData);
+    socket.on('locationUpdate', onLocationUpdate);
+    socket.on('walkCleared', onWalkCleared);
+    socket.on('neighborhoodUpdate', onNeighborhoodUpdate);
 
     return () => {
-      socket.off('initialData');
-      socket.off('locationUpdate');
-      socket.off('walkCleared');
+      socket.off('connect', onConnect);
+      socket.off('disconnect', onDisconnect);
+      socket.off('initialData', onInitialData);
+      socket.off('locationUpdate', onLocationUpdate);
+      socket.off('walkCleared', onWalkCleared);
+      socket.off('neighborhoodUpdate', onNeighborhoodUpdate);
     };
   }, []);
 
@@ -95,8 +118,8 @@ const Dashboard = () => {
       </div>
 
       <MapContainer 
-        center={[39.9334, 32.8597]} // Default Ankara
-        zoom={15} 
+        center={[39.920770, 32.854110]} 
+        zoom={13} 
         style={{ height: '100%', width: '100%' }}
         zoomControl={false}
       >
@@ -105,6 +128,27 @@ const Dashboard = () => {
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
         />
         
+        {neighborhoods && neighborhoods.length > 0 && neighborhoods.map(n => {
+           let color = '#64748b';
+           if (n.owner_team === 'RED') color = '#ef4444';
+           else if (n.owner_team === 'BLUE') color = '#3b82f6';
+           else if (n.owner_team === 'GREEN') color = '#10b981';
+
+           return (n.geom && (
+             <GeoJSON 
+               key={n.id + '_' + n.owner_team}
+               data={JSON.parse(n.geom)} 
+               style={{
+                 color: color,
+                 weight: 2,
+                 opacity: 0.8,
+                 fillColor: color,
+                 fillOpacity: 0.25
+               }}
+             />
+           ));
+        })}
+
         {path.length > 0 && (
           <>
             <Polyline 

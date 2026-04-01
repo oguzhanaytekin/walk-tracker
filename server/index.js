@@ -183,6 +183,17 @@ app.get('/api/walks', (req, res) => {
   res.json(currentWalks);
 });
 
+app.get('/api/neighborhoods', async (req, res) => {
+  try {
+    const nQuery = `SELECT id, name, district, owner_team, score_red, score_blue, score_green, ST_AsGeoJSON(geom) as geom FROM neighborhoods`;
+    const result = await db.query(nQuery);
+    res.json(result.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // React app routes (Explicitly defined for Express 5 stability)
 const serveIndex = (req, res) => {
   res.sendFile(path.resolve(__dirname, '../dist', 'index.html'));
