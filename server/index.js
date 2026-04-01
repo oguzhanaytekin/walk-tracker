@@ -6,7 +6,15 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+app.use(express.json()); // Required for parsing application/json
+
+const authRouter = require('./auth');
+app.use('/api/auth', authRouter);
 
 const server = http.createServer(app);
 const io = new Server(server, {

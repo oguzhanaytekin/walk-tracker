@@ -26,7 +26,17 @@ const Tracker = () => {
     watchId.current = navigator.geolocation.watchPosition(
       (position) => {
         const { latitude, longitude, speed, accuracy } = position.coords;
-        const newLocation = { lat: latitude, lng: longitude, timestamp: Date.now() };
+        const userStr = localStorage.getItem('user');
+        const user = userStr ? JSON.parse(userStr) : null;
+        
+        const newLocation = { 
+          lat: latitude, 
+          lng: longitude, 
+          timestamp: Date.now(),
+          userId: user?.id,
+          username: user?.username,
+          teamColor: user?.teamColor || 'GRAY'
+        };
         
         setLocation(newLocation);
         socket.emit('locationUpdate', newLocation);
